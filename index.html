@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title> To-Do List</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+  
+  <div class="clock" id="clock"></div>
+  <main class="todo-card">
+<h1> <i class="fa-solid fa-list-check"></i> <span>Smart Task List</span></h1>
+
+    <!-- إدخال مهمة -->
+    <div class="input-wrap">
+      <input id="task-input" type="text" placeholder="Add a new task... ">
+      <button id="add-task-btn" type="button"><i class="fa-solid fa-plus"></i></button>
+    </div>
+
+    <!-- أزرار الفلترة -->
+    <div class="filters">
+      <button data-filter="all" class="active">All</button>
+      <button data-filter="done">Completed </button>
+      <button data-filter="todo"> Incomplete</button>
+    </div>
+
+    <!-- قائمة المهام -->
+    <ul id="task-list"></ul>
+
+    <div class="progress-bar">
+  <div id="progress-fill"></div>
+</div>
+
+    <!-- عداد -->
+    <p id="counter">Total: 0 | Accomplished: 0</p>
+    
+    <!-- نافذة تعديل المهمة -->
+    <div id="edit-modal" class="modal">
+      <div class="modal-content">
+        <h3> Edit the task</h3>
+        <input type="text" id="edit-input" placeholder=" Enter new text">
+        <div class="modal-buttons">
+          <button id="save-edit">save</button>
+          <button id="cancel-edit">cancel </button>
+        </div>
+      </div>
+    </div>
+  </main>
+  
+
+  <script src="main.js"></script>
+</body>
+</html>
+
+
+
+
