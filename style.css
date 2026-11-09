@@ -373,3 +373,59 @@ li.done span {
 
 
 
+
+
+/* Accessibility and responsive refinements */
+* {
+  box-sizing: border-box;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+button:focus-visible,
+input:focus-visible,
+li span:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 3px;
+}
+
+.todo-card {
+  width: min(420px, calc(100% - 32px));
+}
+
+@media (max-width: 480px) {
+  .todo-card {
+    padding: 20px 16px;
+    margin-top: 90px;
+  }
+
+  .clock {
+    font-size: clamp(30px, 9vw, 42px);
+    letter-spacing: 1px;
+  }
+
+  .filters button {
+    font-size: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
