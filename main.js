@@ -26,13 +26,17 @@ document.addEventListener("DOMContentLoaded", () => {
       const legacy = current === null ? localStorage.getItem("tasks") : null;
       const stored = JSON.parse(current ?? legacy ?? "[]");
       if (!Array.isArray(stored)) return [];
-      return stored
+      const migrated = stored
         .filter((task) => task && typeof task.text === "string")
         .map((task) => ({
           id: typeof task.id === "string" ? task.id : createId(),
           text: task.text,
           done: Boolean(task.done),
         }));
+      if (current === null && legacy !== null) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
+      }
+      return migrated;
     } catch {
       return [];
     }
