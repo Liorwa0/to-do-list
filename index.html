@@ -1,59 +1,50 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title> To-Do List</title>
+  <meta name="description" content="A simple task manager with filters, editing, and progress tracking.">
+  <title>Smart Task List</title>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body>
-  
-  <div class="clock" id="clock"></div>
+  <div class="clock" id="clock" aria-live="off"></div>
   <main class="todo-card">
-<h1> <i class="fa-solid fa-list-check"></i> <span>Smart Task List</span></h1>
+    <h1><i class="fa-solid fa-list-check" aria-hidden="true"></i> <span>Smart Task List</span></h1>
 
-    <!-- إدخال مهمة -->
     <div class="input-wrap">
-      <input id="task-input" type="text" placeholder="Add a new task... ">
-      <button id="add-task-btn" type="button"><i class="fa-solid fa-plus"></i></button>
+      <label class="visually-hidden" for="task-input">New task</label>
+      <input id="task-input" type="text" maxlength="300" placeholder="Add a new task..." autocomplete="off">
+      <button id="add-task-btn" type="button" aria-label="Add task"><i class="fa-solid fa-plus" aria-hidden="true"></i></button>
     </div>
 
-    <!-- أزرار الفلترة -->
-    <div class="filters">
-      <button data-filter="all" class="active">All</button>
-      <button data-filter="done">Completed </button>
-      <button data-filter="todo"> Incomplete</button>
+    <div class="filters" aria-label="Filter tasks">
+      <button type="button" data-filter="all" class="active" aria-pressed="true">All</button>
+      <button type="button" data-filter="done" aria-pressed="false">Completed</button>
+      <button type="button" data-filter="todo" aria-pressed="false">Incomplete</button>
     </div>
 
-    <!-- قائمة المهام -->
-    <ul id="task-list"></ul>
+    <ul id="task-list" aria-label="Tasks"></ul>
 
-    <div class="progress-bar">
-  <div id="progress-fill"></div>
-</div>
+    <div class="progress-bar" role="progressbar" aria-label="Task completion" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+      <div id="progress-fill"></div>
+    </div>
 
-    <!-- عداد -->
-    <p id="counter">Total: 0 | Accomplished: 0</p>
-    
-    <!-- نافذة تعديل المهمة -->
-    <div id="edit-modal" class="modal">
+    <p id="counter" aria-live="polite">Total: 0 | Completed: 0</p>
+
+    <div id="edit-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="edit-title">
       <div class="modal-content">
-        <h3> Edit the task</h3>
-        <input type="text" id="edit-input" placeholder=" Enter new text">
+        <h2 id="edit-title">Edit task</h2>
+        <label class="visually-hidden" for="edit-input">Updated task text</label>
+        <input type="text" id="edit-input" maxlength="300" placeholder="Enter new text">
         <div class="modal-buttons">
-          <button id="save-edit">save</button>
-          <button id="cancel-edit">cancel </button>
+          <button id="save-edit" type="button">Save</button>
+          <button id="cancel-edit" type="button">Cancel</button>
         </div>
       </div>
     </div>
   </main>
-  
-
   <script src="main.js"></script>
 </body>
 </html>
-
-
-
-
