@@ -1,136 +1,194 @@
 document.addEventListener("DOMContentLoaded", () => {
   const input = document.getElementById("task-input");
-  const addBtn = document.getElementById("add-task-btn");
+  const addButton = document.getElementById("add-task-btn");
   const list = document.getElementById("task-list");
   const counter = document.getElementById("counter");
-  const filterButtons = document.querySelectorAll(".filters button");
-
+  const filterButtons = [...document.querySelectorAll(".filters button")];
   const modal = document.getElementById("edit-modal");
   const editInput = document.getElementById("edit-input");
   const saveEdit = document.getElementById("save-edit");
   const cancelEdit = document.getElementById("cancel-edit");
+  const progressFill = document.getElementById("progress-fill");
+  const clock = document.getElementById("clock");
 
-  let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+  const STORAGE_KEY = "smart-task-list.tasks";
   let currentFilter = "all";
-  let editIndex = null;
+  let editingTaskId = null;
 
-  function saveTasks() {
-    localStorage.setItem("tasks", JSON.stringify(tasks));
+  function createId() {
+    return globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  }
+
+  function loadTasks() {
+    try {
+      const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+      if (!Array.isArray(stored)) return [];
+      return stored
+        .filter((task) => task && typeof task.text === "string")
+        .map((task) => ({
+          id: typeof task.id === "string" ? task.id : createId(),
+          text: task.text,
+          done: Boolean(task.done),
+        }));
+    } catch {
+      return [];
+    }
+  }
+
+  let tasks = loadTasks();
+
+  function persistTasks() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+    } catch (error) {
+      console.warn("Tasks could not be saved in this browser.", error);
+    }
+  }
+
+  function updateSummary() {
+    const completed = tasks.filter((task) => task.done).length;
+    const total = tasks.length;
+    if (counter) counter.textContent = `Total: ${total} | Completed: ${completed}`;
+    if (progressFill) {
+      const percentage = total === 0 ? 0 : (completed / total) * 100;
+      progressFill.style.width = `${percentage}%`;
+      progressFill.setAttribute("aria-valuenow", String(Math.round(percentage)));
+    }
+  }
+
+  function makeActionButton(label, symbol, onClick) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "action";
+    button.textContent = symbol;
+    button.setAttribute("aria-label", label);
+    button.addEventListener("click", onClick);
+    return button;
   }
 
   function render() {
-    list.innerHTML = "";
-    let completedCount = 0;
+    if (!list) return;
+    list.replaceChildren();
 
-    tasks.forEach((t, i) => {
-      if (currentFilter === "done" && !t.done) return;
-      if (currentFilter === "todo" && t.done) return;
-
-      const li = document.createElement("li");
-      if (t.done) li.classList.add("done");
-
-      const span = document.createElement("span");
-      span.textContent = t.text;
-      span.ondblclick = () => editTask(i);
-
-      const checkBtn = document.createElement("button");
-      checkBtn.className = "action";
-      checkBtn.innerHTML = '<i class="fa-solid fa-check"></i>';
-      checkBtn.onclick = () => toggleDone(i);
-
-      const delBtn = document.createElement("button");
-      delBtn.className = "action";
-      delBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
-      delBtn.onclick = () => deleteTask(i);
-
-      li.appendChild(span);
-      li.appendChild(checkBtn);
-      li.appendChild(delBtn);
-
-      list.appendChild(li);
-
-      if (t.done) completedCount++;
+    const visibleTasks = tasks.filter((task) => {
+      if (currentFilter === "done") return task.done;
+      if (currentFilter === "todo") return !task.done;
+      return true;
     });
 
-    counter.textContent = `الإجمالي: ${tasks.length} | المنجزة: ${completedCount}`;
-    saveTasks();
-    updateProgress(); // لتحديث الإحصائية بكل مرة
+    for (const task of visibleTasks) {
+      const item = document.createElement("li");
+      if (task.done) item.classList.add("done");
+
+      const text = document.createElement("span");
+      text.textContent = task.text;
+      text.tabIndex = 0;
+      text.setAttribute("role", "button");
+      text.setAttribute("aria-label", `Edit task: ${task.text}`);
+      text.addEventListener("dblclick", () => openEditor(task.id));
+      text.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          openEditor(task.id);
+        }
+      });
+
+      const completeButton = makeActionButton(
+        task.done ? "Mark as incomplete" : "Mark as complete",
+        task.done ? "↶" : "✓",
+        () => toggleTask(task.id)
+      );
+      const deleteButton = makeActionButton("Delete task", "×", () => deleteTask(task.id));
+
+      item.append(text, completeButton, deleteButton);
+      list.appendChild(item);
+    }
+
+    updateSummary();
+    persistTasks();
   }
 
   function addTask() {
-    const text = input.value.trim();
-    if (!text) return;
-    tasks.push({ text, done: false });
+    const text = input?.value.trim();
+    if (!text) {
+      input?.focus();
+      return;
+    }
+    tasks.push({ id: createId(), text, done: false });
     input.value = "";
     render();
+    input.focus();
   }
 
-  function toggleDone(i) {
-    tasks[i].done = !tasks[i].done;
+  function toggleTask(id) {
+    const task = tasks.find((item) => item.id === id);
+    if (!task) return;
+    task.done = !task.done;
     render();
   }
 
-  function deleteTask(i) {
-    tasks.splice(i, 1);
+  function deleteTask(id) {
+    tasks = tasks.filter((task) => task.id !== id);
+    if (editingTaskId === id) closeEditor();
     render();
   }
 
-  // نافذة التعديل
-  function editTask(i) {
-    editIndex = i;
-    editInput.value = tasks[i].text;
+  function openEditor(id) {
+    const task = tasks.find((item) => item.id === id);
+    if (!task || !modal || !editInput) return;
+    editingTaskId = id;
+    editInput.value = task.text;
     modal.style.display = "flex";
     editInput.focus();
   }
 
-  saveEdit.onclick = () => {
-    const newText = editInput.value.trim();
-    if (newText) {
-      tasks[editIndex].text = newText;
-      render();
-    }
-    modal.style.display = "none";
-  };
+  function closeEditor() {
+    if (modal) modal.style.display = "none";
+    editingTaskId = null;
+  }
 
-  cancelEdit.onclick = () => {
-    modal.style.display = "none";
-  };
+  function saveEditedTask() {
+    const task = tasks.find((item) => item.id === editingTaskId);
+    const updatedText = editInput?.value.trim();
+    if (task && updatedText) task.text = updatedText;
+    closeEditor();
+    render();
+  }
 
-  //  الفلاتر
-  filterButtons.forEach(btn => {
-    btn.addEventListener("click", () => {
-      filterButtons.forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-      currentFilter = btn.getAttribute("data-filter");
+  function updateClock() {
+    if (!clock) return;
+    clock.textContent = new Intl.DateTimeFormat(undefined, {
+      hour: "numeric",
+      minute: "2-digit",
+      second: "2-digit",
+    }).format(new Date());
+  }
+
+  addButton?.addEventListener("click", addTask);
+  input?.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") addTask();
+  });
+  saveEdit?.addEventListener("click", saveEditedTask);
+  cancelEdit?.addEventListener("click", closeEditor);
+  editInput?.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") saveEditedTask();
+    if (event.key === "Escape") closeEditor();
+  });
+
+  filterButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      filterButtons.forEach((item) => {
+        item.classList.remove("active");
+        item.setAttribute("aria-pressed", "false");
+      });
+      button.classList.add("active");
+      button.setAttribute("aria-pressed", "true");
+      currentFilter = button.dataset.filter || "all";
       render();
     });
   });
 
-  addBtn.addEventListener("click", addTask);
-  input.addEventListener("keydown", e => { if (e.key === "Enter") addTask(); });
-
-  //  الساعة
-  function updateClock() {
-    const now = new Date();
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    const seconds = String(now.getSeconds()).padStart(2, '0');
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    const displayHour = hours % 12 || 12;
-    document.getElementById('clock').textContent = `${displayHour}:${minutes}:${seconds} ${ampm}`;
-  }
-
-  setInterval(updateClock, 1000);
   updateClock();
-
-  // نسبة الإنجاز
-  function updateProgress() {
-    const done = tasks.filter(t => t.done).length;
-    const total = tasks.length || 1;
-    const percent = (done / total) * 100; //تحسب النسبه المئويه للانجاز
-    const fill = document.getElementById("progress-fill");
-    if (fill) fill.style.width = percent + "%";//تغير عرض الشريط حسب النسبه
-  }
-
+  window.setInterval(updateClock, 1000);
   render();
 });
