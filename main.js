@@ -9,6 +9,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const saveEdit = document.getElementById("save-edit");
   const cancelEdit = document.getElementById("cancel-edit");
   const progressFill = document.getElementById("progress-fill");
+  const progressBar = document.querySelector(".progress-bar");
   const clock = document.getElementById("clock");
 
   const STORAGE_KEY = "smart-task-list.tasks";
@@ -21,7 +22,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function loadTasks() {
     try {
-      const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+      const current = localStorage.getItem(STORAGE_KEY);
+      const legacy = current === null ? localStorage.getItem("tasks") : null;
+      const stored = JSON.parse(current ?? legacy ?? "[]");
       if (!Array.isArray(stored)) return [];
       return stored
         .filter((task) => task && typeof task.text === "string")
@@ -52,7 +55,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (progressFill) {
       const percentage = total === 0 ? 0 : (completed / total) * 100;
       progressFill.style.width = `${percentage}%`;
-      progressFill.setAttribute("aria-valuenow", String(Math.round(percentage)));
+      progressBar?.setAttribute("aria-valuenow", String(Math.round(percentage)));
     }
   }
 
